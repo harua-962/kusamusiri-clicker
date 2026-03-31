@@ -1057,11 +1057,8 @@ function pullWeed(obj, cx, cy) {
 
 function missWeed(obj) {
   if (!active || !obj.el.parentNode) return;
-  hearts = Math.max(0, hearts - 1);
-  updateHeartsUI();
   obj.el.classList.add('missed');
   weeds = weeds.filter(w => w !== obj);
-  if (hearts <= 0) setTimeout(() => endGame(false), 120);
   setTimeout(() => { if (obj.el.parentNode) obj.el.remove(); }, 450);
 }
 
