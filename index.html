@@ -433,6 +433,7 @@ const SFX_GAIN      = 0.6;
 const CROP_BOUNCE_EVERY = 3;
 const THRESHOLDS    = [0, 8, 18, 32, 45];
 const CROP_TOTAL    = 45;
+const WEED_LIFETIME = 5000;
 const MAX_BUGS      = 3;
 const BUG_LIFETIME  = 7500;
 const BUG_VX_RANGE  = 55;   // bug max horizontal speed (px/s)
@@ -751,7 +752,7 @@ function spawnWeed() {
     onHit(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
   }, { passive: false });
 
-  const t = setTimeout(() => { if (el.parentNode) missWeed(obj); }, 2600);
+  const t = setTimeout(() => { if (el.parentNode) missWeed(obj); }, WEED_LIFETIME);
   wTimers.push(t);
   scheduleNext();
 }
@@ -773,8 +774,17 @@ function spawnBug() {
   const fw = field.offsetWidth, fh = field.offsetHeight;
   const groundY = fh * GROUND_PCT;
 
-  const x = 80 + Math.random() * (fw - 160);
-  const y = groundY - 20 - Math.random() * (fh * 0.35);
+  let x, y;
+  if (weeds.length > 0) {
+    const nearWeed = weeds[Math.floor(Math.random() * weeds.length)];
+    x = nearWeed.x + (Math.random() - 0.5) * 100; // ±50px horizontal
+    y = nearWeed.y + (Math.random() - 0.5) * 80 - 20; // ±40px vertical, shifted up
+    x = Math.max(30, Math.min(fw - 30, x));
+    y = Math.max(20, Math.min(groundY - 10, y));
+  } else {
+    x = 80 + Math.random() * (fw - 160);
+    y = groundY - 20 - Math.random() * (fh * 0.35);
+  }
 
   const el = document.createElement('div');
   el.className = 'bug';
@@ -1177,7 +1187,7 @@ function startGame() {
   setTimeout(spawnWeed, 350);
   setTimeout(spawnWeed, 900);
   setTimeout(spawnWeed, 1500);
-  setTimeout(spawnBug, 5000 + Math.random()*3000);
+  setTimeout(spawnBug, 3000 + Math.random()*2000);
   setTimeout(spawnWater, 4000 + Math.random()*5000);
 }
 
