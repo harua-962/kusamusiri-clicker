@@ -22,7 +22,7 @@ body {
   touch-action: none;
 }
 
-/* ===== FIELD (side view) ===== */
+/* ===== FIELD ===== */
 #field {
   position: absolute; inset: 0;
   background: linear-gradient(180deg,
@@ -73,6 +73,32 @@ body {
 }
 #stage-badge.show { opacity: 1; }
 
+/* Harvestable state */
+#crop-wrap.harvestable {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+#crop-wrap.harvestable #crop-svg {
+  animation: harvestGlow 0.7s ease infinite alternate;
+}
+@keyframes harvestGlow {
+  from { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45)) drop-shadow(0 0 12px rgba(255,214,0,0.65)); transform: scale(1); }
+  to   { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45)) drop-shadow(0 0 32px rgba(255,214,0,1));   transform: scale(1.07); }
+}
+
+/* Carrot pull-out animation */
+@keyframes carrotPullAnim {
+  0%   { transform: translate(-50%, -100%) scale(1)    rotate(0deg);  opacity: 1; }
+  18%  { transform: translate(-50%, -114%) scale(1.07) rotate(-7deg); opacity: 1; }
+  36%  { transform: translate(-50%, -130%) scale(1.12) rotate(9deg);  opacity: 1; }
+  60%  { transform: translate(-50%, -160%) scale(1.1)  rotate(-5deg); opacity: 1; }
+  100% { transform: translate(-50%, -320%) scale(0.15) rotate(32deg); opacity: 0; }
+}
+#crop-wrap.harvest-pull {
+  pointer-events: none !important;
+  animation: carrotPullAnim 1.25s cubic-bezier(0.2, 0, 0.55, 1.45) forwards;
+}
+
 /* Harvest flash */
 #harvest-flash {
   position: fixed; inset: 0;
@@ -81,6 +107,15 @@ body {
 }
 #harvest-flash.flash { animation: hFlash 1s ease forwards; }
 @keyframes hFlash { 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
+
+/* Game over flash */
+#gameover-flash {
+  position: fixed; inset: 0;
+  background: rgba(180, 0, 0, 0.55);
+  pointer-events: none; z-index: 80; opacity: 0;
+}
+#gameover-flash.flash { animation: goFlash 0.8s ease forwards; }
+@keyframes goFlash { 0%{opacity:0} 25%{opacity:1} 100%{opacity:0} }
 
 /* ===== WEED ===== */
 .weed {
@@ -105,8 +140,37 @@ body {
   100% { transform: translate(-50%,-50%) scale(0.7); opacity:0; }
 }
 
-/* Timer ring (hidden in side view – replaced by weed outline glow) */
-.wring { display: none; }
+/* ===== BUG ===== */
+.bug {
+  position: absolute;
+  width: 46px; height: 46px;
+  transform: translate(-50%,-50%);
+  cursor: pointer; z-index: 12;
+}
+.bug svg { width: 100%; height: 100%; display: block; filter: drop-shadow(1px 2px 5px rgba(0,0,0,0.45)); }
+.bug:active svg { transform: scale(0.85); }
+.bug.hit { animation: bugSquish 0.22s ease forwards; pointer-events: none; }
+@keyframes bugSquish {
+  0%   { transform: translate(-50%,-50%) scale(1);       opacity: 1; }
+  45%  { transform: translate(-50%,-50%) scale(1.5,0.5); opacity: 0.8; }
+  100% { transform: translate(-50%,-50%) scale(0.05);    opacity: 0; }
+}
+
+/* ===== WATER ITEM ===== */
+.water-item {
+  position: absolute;
+  width: 48px; height: 56px;
+  transform: translate(-50%,-50%);
+  cursor: pointer; z-index: 13;
+  filter: drop-shadow(0 2px 8px rgba(41,182,246,0.65));
+}
+.water-item:active { transform: translate(-50%,-50%) scale(0.85); }
+.water-item.collected { animation: waterPop 0.32s ease forwards; pointer-events: none; }
+@keyframes waterPop {
+  0%   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+  50%  { transform: translate(-50%,-50%) scale(1.6); opacity: 0.7; }
+  100% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; }
+}
 
 /* ===== FX ===== */
 .dirt {
@@ -151,20 +215,11 @@ body {
   line-height:1; min-width:46px; text-align:right;
 }
 #score-unit { font-size:0.8rem; color:#666; }
-#timer-box { display:flex; flex-direction:column; align-items:center; padding:5px 16px; }
-#timer-label { font-size:0.7rem; color:#666; }
-#timer-val {
-  font-family:'Fredoka One',cursive; font-size:2.4rem; color:#222; line-height:1;
-}
-#timer-val.urgent { color:#E53935; animation:urgPulse 0.45s ease infinite alternate; }
-@keyframes urgPulse { from{transform:scale(1)} to{transform:scale(1.1)} }
-#pain-box { display:flex; flex-direction:column; align-items:flex-start; min-width:100px; }
+#hp-box { display:flex; flex-direction:column; align-items:flex-start; min-width:90px; }
 #pain-top { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
 #pain-icon { font-size:1.1rem; }
 #pain-label { font-size:0.75rem; color:#555; font-weight:700; }
 #hearts-display { display:flex; gap:2px; font-size:1.25rem; line-height:1; }
-#pain-warn { font-size:0.65rem; color:#E53935; font-weight:700; margin-top:2px; opacity:0; transition:opacity 0.3s; }
-#pain-warn.show { opacity:1; }
 
 /* ===== CROP PROGRESS BAR ===== */
 #crop-bar {
@@ -190,77 +245,23 @@ body {
 .si { opacity:0.32; transition:opacity 0.3s, transform 0.3s; }
 .si.done { opacity:1; transform:scale(1.18); }
 
-/* ===== OVERLAYS ===== */
-#slow-overlay {
-  position:fixed; inset:0;
-  background:radial-gradient(ellipse at 50% 100%, rgba(100,40,0,0.42) 0%, transparent 65%);
-  pointer-events:none; z-index:40; opacity:0; transition:opacity 0.5s;
-}
-#slow-overlay.active { opacity:1; }
-@keyframes painShow {
-  0%{opacity:0;transform:translate(-50%,-50%) scale(0.4)}
-  25%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}
-  70%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-64%) scale(0.88)}
-}
-
-/* ===== BACKACHE GAUGE ===== */
-#backache-bar-wrap { margin-top:5px; width:100%; }
-#backache-gauge-label { font-size:0.65rem; color:#888; font-weight:700; margin-bottom:2px; }
-#backache-track {
-  width:100%; height:8px; background:rgba(0,0,0,0.12);
-  border-radius:4px; overflow:hidden;
-}
-#backache-fill {
-  height:100%; width:0%;
-  background:linear-gradient(90deg,#FFB300,#E53935);
-  border-radius:4px; transition:width 0.18s ease;
-}
-
-/* ===== BACKACHE WARNING MSG ===== */
-#backache-msg {
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  font-family:'Fredoka One',cursive; font-size:2.4rem; color:#FF6F00;
-  text-shadow:0 3px 10px rgba(0,0,0,0.45); z-index:62; pointer-events:none;
-  opacity:0; white-space:nowrap;
-}
-#backache-msg.show { animation:painShow 1.1s ease forwards; }
-
-/* ===== RECOVERY POPUP ===== */
-#recovery-popup {
-  position:fixed; inset:0; z-index:120;
-  background:rgba(0,0,0,0.62);
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity 0.3s;
-}
-#recovery-popup.show { opacity:1; pointer-events:auto; }
-#recovery-card {
-  background:white; border-radius:22px; padding:30px 38px;
-  text-align:center; box-shadow:0 10px 36px rgba(0,0,0,0.35);
-  max-width:300px; width:88%;
-}
-#recovery-card h3 {
-  font-family:'Fredoka One',cursive; font-size:2rem; color:#E53935; margin-bottom:6px;
-}
-#recovery-card p {
-  font-size:0.88rem; color:#555; line-height:1.55; margin-bottom:14px;
-}
-.recovery-loader {
-  width:50px; height:50px;
-  border:5px solid #e0e0e0; border-top-color:#E53935;
-  border-radius:50%;
-  animation:spin 0.75s linear infinite;
-  margin:0 auto 14px;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-#recovery-progress-track {
-  width:100%; height:10px; background:#f0f0f0;
-  border-radius:5px; overflow:hidden; margin-top:4px;
-}
-#recovery-progress-fill {
-  height:100%; width:0%;
-  background:linear-gradient(90deg,#FF8F00,#E53935);
-  border-radius:5px; transition:width 0.1s linear;
+/* ===== HARVEST HINT ===== */
+#harvest-hint {
+  position: fixed;
+  top: 42%; left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  color: #FFD600;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(255,214,0,0.5);
+  pointer-events: none;
+  z-index: 46;
+  display: none;
+  animation: hintBounce 0.7s ease infinite alternate;
+  white-space: nowrap;
+  background: rgba(0,0,0,0.45);
+  padding: 6px 18px;
+  border-radius: 22px;
 }
 
 /* ===== CROP BOUNCE ===== */
@@ -307,10 +308,11 @@ body {
 
 #result-screen { display:none; }
 #result-screen.show { display:flex; }
-#result-screen h2 {
+#result-title {
   font-family:'Fredoka One',cursive; font-size:clamp(1.5rem,6vw,2rem);
   color:#388E3C; text-align:center; text-shadow:2px 3px 0 #1B5E20; margin-bottom:4px;
 }
+#result-title.lose { color:#D32F2F; text-shadow:2px 3px 0 #7f0000; }
 #result-score {
   font-family:'Fredoka One',cursive; font-size:clamp(2.8rem,10vw,4rem);
   color:var(--accent); text-shadow:2px 3px 0 #c0391b;
@@ -318,20 +320,6 @@ body {
 }
 #result-score span { font-size:1.4rem; color:#666; }
 #grade-badge { font-size:3rem; text-align:center; margin-bottom:6px; }
-.reality-card {
-  background:linear-gradient(135deg,#FFF3E0,#FFFDE7);
-  border:3px solid #FFB300; border-radius:18px; padding:16px 20px;
-  max-width:360px; width:100%; margin-bottom:14px;
-  box-shadow:0 4px 14px rgba(255,152,0,0.2);
-}
-.reality-card .rtitle { font-size:0.82rem; font-weight:900; color:#E65100; margin-bottom:10px; }
-.r-item {
-  background:white; border-radius:10px; padding:9px 12px; margin-bottom:7px;
-  display:flex; align-items:center; gap:10px;
-}
-.r-ico { font-size:1.5rem; flex-shrink:0; }
-.r-text { font-size:0.8rem; color:#444; line-height:1.45; }
-.r-val { font-family:'Fredoka One',cursive; font-size:1.1rem; color:#E65100; }
 .result-comment { font-size:0.95rem; color:#555; text-align:center; max-width:340px; line-height:1.5; margin-bottom:14px; }
 
 .confetti-piece {
@@ -356,30 +344,23 @@ body {
 <!-- START -->
 <div class="screen" id="start-screen">
   <h1>🌿 草むしり<br>チャレンジ！</h1>
-  <p class="sub">60秒で草をぬいて、作物を育てよう！</p>
+  <p class="sub">草をぬいてニンジンを育てよう！</p>
   <div class="rules-card">
     <h3>🎮 あそびかた</h3>
-    <div class="rule"><span class="ri">👁️</span><span>横から見た畑に草が生えてくるよ！<br>左右にカーソルを動かして草を見つけよう！</span></div>
-    <div class="rule"><span class="ri">🌿</span><span>草をクリック（タップ）して<strong>ぬこう！</strong></span></div>
-    <div class="rule"><span class="ri">🥕</span><span>草をぬくごとに まん中の<strong>ニンジンが成長</strong>するよ！</span></div>
-    <div class="rule"><span class="ri">💚</span><span>草が消えると<strong>体力ハート</strong>が1つ減るよ！</span></div>
-    <div class="rule"><span class="ri">🔥</span><span>草を抜くのが早すぎると<strong>腰痛ゲージ</strong>が溜まるよ！マックスになると回復タイムが入るぞ！</span></div>
-    <div class="rule"><span class="ri">🏆</span><span>収穫まで育てられるかな？（45本でクリア！）</span></div>
+    <div class="rule"><span class="ri">🌿</span><span>草をクリック（タップ）して<strong>ぬこう！</strong>ぬくたびにニンジンが成長するよ！</span></div>
+    <div class="rule"><span class="ri">🐛</span><span><strong>虫</strong>が飛んでくるよ！虫をクリックすると<strong>体力が減る</strong>から気をつけて！</span></div>
+    <div class="rule"><span class="ri">💧</span><span><strong>水</strong>が左から流れてくる！タッチすると<strong>ニンジンがぐんと育つ！</strong></span></div>
+    <div class="rule"><span class="ri">🥕</span><span>成長メーターが<strong>マックス</strong>になったら、まん中のニンジンをタップして<strong>収穫しよう！</strong></span></div>
+    <div class="rule"><span class="ri">💀</span><span>体力がゼロになると<strong>ゲームオーバー</strong>！虫に注意してね！</span></div>
   </div>
   <button class="big-btn" onclick="startGame()">🌿 はじめる！</button>
 </div>
 
 <!-- RESULT -->
 <div class="screen" id="result-screen">
-  <h2>🌾 けっか発表！</h2>
+  <h2 id="result-title">🌾 けっか発表！</h2>
   <div id="grade-badge"></div>
   <div id="result-score">0 <span>本！</span></div>
-  <div class="reality-card" style="display:none">
-    <div class="r-item">
-      <div class="r-ico" id="crop-res-ico">🌱</div>
-      <div class="r-text" id="crop-res-text">もうすこし草をぬくと収穫できたよ！</div>
-    </div>
-  </div>
   <p class="result-comment" id="result-comment">おつかれさまでした！</p>
   <button class="big-btn" onclick="startGame()">🔄 もういちど！</button>
 </div>
@@ -401,11 +382,7 @@ body {
     <div id="score-val">0</div>
     <span id="score-unit">本</span>
   </div>
-  <div class="hud-box" id="timer-box">
-    <div id="timer-label">のこり</div>
-    <div id="timer-val">60</div>
-  </div>
-  <div class="hud-box" id="pain-box">
+  <div class="hud-box" id="hp-box">
     <div id="pain-top">
       <span id="pain-icon">💚</span>
       <span id="pain-label">体力</span>
@@ -416,11 +393,6 @@ body {
       <span class="heart-icon" id="h2">💚</span>
       <span class="heart-icon" id="h3">💚</span>
       <span class="heart-icon" id="h4">💚</span>
-    </div>
-    <div id="pain-warn">🔴 つかれた！おそく…</div>
-    <div id="backache-bar-wrap">
-      <div id="backache-gauge-label">🔥 腰痛ゲージ</div>
-      <div id="backache-track"><div id="backache-fill"></div></div>
     </div>
   </div>
 </div>
@@ -438,86 +410,76 @@ body {
   <div id="crop-bar-track"><div id="crop-bar-fill"></div></div>
 </div>
 
-<div id="slow-overlay"></div>
-<div id="backache-msg">いてててて！</div>
-<div id="recovery-popup">
-  <div id="recovery-card">
-    <div class="recovery-loader"></div>
-    <h3>🩺 回復中</h3>
-    <p>腰痛ゲージがマックスだ。<br>もう少しスピードを落とそう</p>
-    <div id="recovery-progress-track">
-      <div id="recovery-progress-fill"></div>
-    </div>
-  </div>
-</div>
+<!-- HARVEST HINT -->
+<div id="harvest-hint">🥕 タップして収穫！</div>
+
 <div id="harvest-flash"></div>
-<div id="hint" style="display:none">👆 草をクリックしてぬこう！左右に草が生えてくるよ！</div>
+<div id="gameover-flash"></div>
+<div id="hint" style="display:none">👆 草をクリックしてぬこう！虫には気をつけて！</div>
 
 <script>
 // ============================================================
 //  CONFIG
 // ============================================================
-const GAME_SEC      = 60;
 const HEARTS_MAX    = 5;
-const HEARTS_RECOVERY = 3;    // hearts restored after slow penalty
-const SLOW_PENALTY_MS = 2500; // ms slow lasts after losing all hearts
 const MAX_WEEDS     = 6;
-const W_SIZE_W      = 60;   // weed width px
-const W_SIZE_H      = 130;  // weed height px
-const GROUND_PCT    = 0.60; // ground line fraction from top
-// Sound constants
+const W_SIZE_W      = 60;
+const W_SIZE_H      = 130;
+const GROUND_PCT    = 0.60;
 const SFX_DUR       = 0.20;
 const SFX_FREQ      = 700;
 const SFX_Q         = 0.7;
 const SFX_GAIN      = 0.6;
-
-// Backache gauge constants
-const RAPID_CLICK_MS    = 380;  // clicks faster than this build gauge
-const BACKACHE_INC      = 24;   // gauge increase per fast click
-const BACKACHE_DEC_RATE = 12;   // gauge decrease per second when idle
-const BACKACHE_WARN     = 60;   // show warning
-const BACKACHE_MAX      = 100;  // trigger recovery
-const RECOVERY_SEC      = 3;    // recovery duration in seconds
-
-// Crop bounce
-const CROP_BOUNCE_EVERY = 3;    // bounce every N weeds pulled
-
-// Crop: 5 stages, threshold = weeds pulled to reach
+const CROP_BOUNCE_EVERY = 3;
 const THRESHOLDS    = [0, 8, 18, 32, 45];
 const CROP_TOTAL    = 45;
+const MAX_BUGS      = 3;
+const BUG_LIFETIME  = 7500;
+const BUG_VX_RANGE  = 55;   // bug max horizontal speed (px/s)
+const BUG_VY_RANGE  = 30;   // bug max vertical speed (px/s)
+const BUG_DIR_CHANGE_PROB = 0.018; // probability per frame of random direction change
+const WATER_BOOST_PCT = 0.18;      // fraction of CROP_TOTAL added per water catch
+const WATER_BOOST   = Math.round(CROP_TOTAL * WATER_BOOST_PCT);
+const WATER_SPEED_MIN = 62;  // water droplet min horizontal speed (px/s)
+const WATER_SPEED_RNG = 38;  // water droplet speed randomness range
+const WATER_AMP1_MIN  = 22;  // primary vertical wave amplitude min
+const WATER_AMP1_RNG  = 28;
+const WATER_AMP2_MIN  = 8;   // secondary vertical wave amplitude min
+const WATER_AMP2_RNG  = 14;
+const WATER_FREQ1_MIN = 0.7; // primary wave frequency min
+const WATER_FREQ1_RNG = 0.9;
+const WATER_FREQ2_MIN = 1.6; // secondary wave frequency min
+const WATER_FREQ2_RNG = 1.4;
 
 // ============================================================
 //  STATE
 // ============================================================
-let score=0, timeLeft=GAME_SEC, hearts=HEARTS_MAX;
-let slowed=false, active=false;
-let timerID=null, wTimers=[], recovID=null;
-let weeds=[];
-let cropStage=0, harvested=false;
+let score = 0, hearts = HEARTS_MAX;
+let active = false;
+let wTimers = [], weeds = [];
+let cropStage = 0, harvestReady = false;
 
-// Backache state
-let backPain=0, inRecovery=false, lastPullTime=0;
-let backacheDecTimer=null;
+let bugs = [];
+let bugTimers    = [];
+let bugIntervals = [];
+
+let waterItems    = [];
+let waterIntervals = [];
+let waterSpawnTimer = null;
 
 // ============================================================
-//  CROP SVG STAGES (side-view carrot: leaves above, root below ground)
-//  viewBox "0 0 120 170" — bottom edge aligns with ground line
+//  CROP SVG STAGES
 // ============================================================
 function cropSVG(stage) {
   const stages = [
-    // 0 seed / just planted — tiny sprout peeking out
     `<ellipse cx="60" cy="165" rx="14" ry="5" fill="#b07030" opacity="0.7"/>
      <path d="M60 163 Q57 152 60 140" stroke="#88cc68" stroke-width="3" fill="none" stroke-linecap="round"/>
      <ellipse cx="60" cy="137" rx="8" ry="5" fill="#a5dd80"/>`,
-
-    // 1 sprout
     `<path d="M60 168 Q55 148 50 128 Q47 112 52 98" stroke="#6dbb50" stroke-width="3.5" fill="none" stroke-linecap="round"/>
      <ellipse cx="46" cy="94" rx="13" ry="7" fill="#88cc68" transform="rotate(-30 46 94)"/>
      <path d="M60 168 Q65 148 70 128 Q73 112 68 98" stroke="#5aaa40" stroke-width="3" fill="none" stroke-linecap="round"/>
      <ellipse cx="72" cy="94" rx="12" ry="6" fill="#6dbb50" transform="rotate(28 72 94)"/>
      <path d="M50 168 L70 168 Q68 155 60 145 Q52 155 50 168Z" fill="#E65100" opacity="0.75"/>`,
-
-    // 2 growing
     `<path d="M60 168 Q52 140 46 112 Q42 88 48 65" stroke="#5aaa40" stroke-width="4" fill="none" stroke-linecap="round"/>
      <ellipse cx="45" cy="61" rx="15" ry="8" fill="#88cc68" transform="rotate(-28 45 61)"/>
      <path d="M60 168 Q60 136 59 105 Q58 80 62 55" stroke="#3d8b38" stroke-width="4.5" fill="none" stroke-linecap="round"/>
@@ -525,8 +487,6 @@ function cropSVG(stage) {
      <path d="M60 168 Q68 140 74 112 Q78 88 72 65" stroke="#5aaa40" stroke-width="4" fill="none" stroke-linecap="round"/>
      <ellipse cx="75" cy="61" rx="15" ry="8" fill="#88cc68" transform="rotate(25 75 61)"/>
      <path d="M48 168 L72 168 Q70 148 60 132 Q50 148 48 168Z" fill="#E65100" opacity="0.85"/>`,
-
-    // 3 big
     `<path d="M60 168 Q44 138 36 108 Q30 82 38 52" stroke="#3d8b38" stroke-width="4.5" fill="none" stroke-linecap="round"/>
      <ellipse cx="35" cy="47" rx="18" ry="10" fill="#66bb58" transform="rotate(-33 35 47)"/>
      <path d="M60 168 Q52 135 48 102 Q45 74 50 44" stroke="#4da040" stroke-width="4" fill="none" stroke-linecap="round"/>
@@ -538,8 +498,6 @@ function cropSVG(stage) {
      <path d="M60 168 Q76 138 84 108 Q90 82 82 52" stroke="#3d8b38" stroke-width="4.5" fill="none" stroke-linecap="round"/>
      <ellipse cx="85" cy="47" rx="17" ry="10" fill="#66bb58" transform="rotate(33 85 47)"/>
      <path d="M46 168 L74 168 Q72 142 60 125 Q48 142 46 168Z" fill="#E65100"/>`,
-
-    // 4 harvest
     `<circle cx="60" cy="145" r="38" fill="rgba(255,214,0,0.18)"/>
      <path d="M60 168 Q40 135 30 102 Q22 74 34 42" stroke="#2e7030" stroke-width="5" fill="none" stroke-linecap="round"/>
      <ellipse cx="31" cy="37" rx="20" ry="12" fill="#4cae45" transform="rotate(-38 31 37)"/>
@@ -558,7 +516,7 @@ function cropSVG(stage) {
   return stages[stage] || stages[0];
 }
 
-const STAGE_NAMES = ['🌱 たね','🪴 めが出た！','🌿 そだってきた！','🌾 もうすぐ収穫！','🥕 収穫！！'];
+const STAGE_NAMES = ['🌱 たね','🪴 めが出た！','🌿 そだってきた！','🌾 もうすぐ収穫！','🥕 収穫できるよ！'];
 
 function updateCropVisual(animate=true) {
   const svg = document.getElementById('crop-svg');
@@ -572,61 +530,87 @@ function updateCropVisual(animate=true) {
   badge.textContent = STAGE_NAMES[cropStage];
   badge.classList.add('show');
   setTimeout(() => badge.classList.remove('show'), 2200);
-
-  for (let i=0;i<5;i++) {
+  for (let i = 0; i < 5; i++) {
     document.getElementById('si'+i).classList.toggle('done', i <= cropStage);
   }
-  const pct = Math.min(100, score / CROP_TOTAL * 100);
-  document.getElementById('crop-bar-fill').style.width = pct + '%';
+  document.getElementById('crop-bar-fill').style.width =
+    Math.min(100, score / CROP_TOTAL * 100) + '%';
 }
 
 function checkCropGrowth() {
   let ns = 0;
-  for (let i=THRESHOLDS.length-1; i>=0; i--) {
+  for (let i = THRESHOLDS.length-1; i >= 0; i--) {
     if (score >= THRESHOLDS[i]) { ns = i; break; }
   }
   const grew = ns > cropStage;
   cropStage = ns;
-
-  // always update progress bar
-  const pct = Math.min(100, score / CROP_TOTAL * 100);
-  document.getElementById('crop-bar-fill').style.width = pct + '%';
-
+  document.getElementById('crop-bar-fill').style.width =
+    Math.min(100, score / CROP_TOTAL * 100) + '%';
   if (grew) {
     updateCropVisual(true);
-    if (cropStage === 4 && !harvested) {
-      harvested = true;
-      document.getElementById('harvest-flash').classList.add('flash');
-      setTimeout(() => document.getElementById('harvest-flash').classList.remove('flash'), 1000);
-      showGrowthPop('🥕 収穫！！', true);
-      spawnConfetti();
+    if (cropStage === 4 && !harvestReady) {
+      enableHarvest();
     } else {
       showGrowthPop('🌿 せいちょう！', false);
     }
   }
 }
 
+function enableHarvest() {
+  harvestReady = true;
+  const wrap = document.getElementById('crop-wrap');
+  wrap.classList.add('harvestable');
+  document.getElementById('harvest-hint').style.display = 'block';
+  showGrowthPop('🥕 収穫できるよ！', true);
+}
+
 // ============================================================
-//  WEED SVGs  (side-view plants growing up from ground)
-//  viewBox "0 0 60 130" — bottom = ground level
+//  HARVEST CARROT
+// ============================================================
+function harvestCarrot() {
+  if (!active || !harvestReady) return;
+  harvestReady = false;
+  active = false;
+
+  const wrap = document.getElementById('crop-wrap');
+  wrap.classList.remove('harvestable', 'bounce');
+  wrap.classList.add('harvest-pull');
+  document.getElementById('harvest-hint').style.display = 'none';
+
+  document.getElementById('harvest-flash').classList.add('flash');
+  setTimeout(() => document.getElementById('harvest-flash').classList.remove('flash'), 1000);
+
+  playHarvestSound();
+  spawnConfetti();
+  setTimeout(() => endGame(true), 1350);
+}
+
+document.getElementById('crop-wrap').addEventListener('click', e => {
+  if (!active || !harvestReady) return;
+  e.stopPropagation();
+  harvestCarrot();
+});
+document.getElementById('crop-wrap').addEventListener('touchend', e => {
+  if (!active || !harvestReady) return;
+  e.preventDefault(); e.stopPropagation();
+  harvestCarrot();
+}, { passive: false });
+
+// ============================================================
+//  WEED SVGs
 // ============================================================
 function makeWeedSVG() {
   const colors = ['#5DBB63','#4AA84F','#6BAF45','#3A8A40','#7EC850','#56A84C'];
   const c = colors[Math.floor(Math.random()*colors.length)];
   const t = Math.floor(Math.random()*4);
   let body = '';
-
   if (t === 0) {
-    // Grass clump — multiple blades
-    body = `
-      <path d="M25 128 Q19 105 16 82 Q13 60 20 38" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    body = `<path d="M25 128 Q19 105 16 82 Q13 60 20 38" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
       <path d="M30 128 Q30 100 29 72 Q28 48 32 18" stroke="${c}" stroke-width="4" fill="none" stroke-linecap="round"/>
       <path d="M35 128 Q41 105 44 82 Q47 60 40 38" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
       <ellipse cx="30" cy="122" rx="13" ry="4" fill="${c}" opacity="0.25"/>`;
   } else if (t === 1) {
-    // Dandelion — stem with alternating leaves and fluffy seed head
-    body = `
-      <path d="M30 128 Q27 106 28 80 Q28 56 27 28" stroke="#7EC850" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    body = `<path d="M30 128 Q27 106 28 80 Q28 56 27 28" stroke="#7EC850" stroke-width="3.5" fill="none" stroke-linecap="round"/>
       <ellipse cx="18" cy="95" rx="14" ry="6" fill="${c}" transform="rotate(-32 18 95)"/>
       <ellipse cx="42" cy="75" rx="14" ry="6" fill="${c}" transform="rotate(28 42 75)"/>
       <ellipse cx="19" cy="57" rx="12" ry="5.5" fill="${c}" transform="rotate(-20 19 57)"/>
@@ -638,18 +622,14 @@ function makeWeedSVG() {
       <line x1="27" y1="25" x2="40" y2="32" stroke="rgba(200,200,200,0.65)" stroke-width="1"/>
       <line x1="27" y1="25" x2="14" y2="32" stroke="rgba(200,200,200,0.65)" stroke-width="1"/>`;
   } else if (t === 2) {
-    // Broadleaf weed — wide leaves on a central stem
-    body = `
-      <path d="M30 128 Q30 112 30 95 Q29 76 30 60" stroke="#6dbb50" stroke-width="3" fill="none" stroke-linecap="round"/>
+    body = `<path d="M30 128 Q30 112 30 95 Q29 76 30 60" stroke="#6dbb50" stroke-width="3" fill="none" stroke-linecap="round"/>
       <ellipse cx="17" cy="103" rx="16" ry="8" fill="${c}" transform="rotate(-25 17 103)" opacity="0.9"/>
       <ellipse cx="43" cy="88" rx="16" ry="8" fill="${c}" transform="rotate(22 43 88)" opacity="0.9"/>
       <ellipse cx="16" cy="72" rx="14" ry="7" fill="${c}" transform="rotate(-18 16 72)" opacity="0.85"/>
       <ellipse cx="44" cy="60" rx="14" ry="7" fill="${c}" transform="rotate(16 44 60)" opacity="0.85"/>
       <ellipse cx="30" cy="48" rx="12" ry="14" fill="${c}" opacity="0.88"/>`;
   } else {
-    // Spiky / branching weed
-    body = `
-      <path d="M30 128 Q28 108 29 86 Q29 66 28 46" stroke="#5aaa40" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    body = `<path d="M30 128 Q28 108 29 86 Q29 66 28 46" stroke="#5aaa40" stroke-width="3.5" fill="none" stroke-linecap="round"/>
       <path d="M29 90 Q15 78 8 62" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>
       <path d="M29 90 Q43 78 50 62" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>
       <path d="M28 68 Q14 58 7 44" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>
@@ -657,12 +637,76 @@ function makeWeedSVG() {
       <ellipse cx="28" cy="44" rx="9" ry="11" fill="${c}"/>
       <circle cx="28" cy="44" r="5" fill="#D94F3D"/>`;
   }
-
   return `<svg viewBox="0 0 60 130" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 }
 
 // ============================================================
-//  SPAWN
+//  BUG SVGs
+// ============================================================
+function makeBugSVG() {
+  const t = Math.floor(Math.random() * 3);
+  if (t === 0) {
+    return `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="22" cy="30" rx="15" ry="10" fill="#D32F2F"/>
+      <line x1="22" y1="20" x2="22" y2="40" stroke="#111" stroke-width="1.5"/>
+      <circle cx="15" cy="27" r="3.5" fill="#111"/>
+      <circle cx="29" cy="27" r="3.5" fill="#111"/>
+      <circle cx="16" cy="34" r="2.8" fill="#111"/>
+      <circle cx="28" cy="34" r="2.8" fill="#111"/>
+      <ellipse cx="22" cy="21" rx="8" ry="6" fill="#1a1a1a"/>
+      <circle cx="18" cy="18" r="1.8" fill="#fff"/>
+      <circle cx="26" cy="18" r="1.8" fill="#fff"/>
+      <path d="M22 16 Q18 11 13 9" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M22 16 Q26 11 31 9" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="12" cy="8" r="1.8" fill="#555"/>
+      <circle cx="32" cy="8" r="1.8" fill="#555"/>
+    </svg>`;
+  } else if (t === 1) {
+    return `<svg viewBox="0 0 54 28" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="42" cy="14" r="9" fill="#66BB6A"/>
+      <circle cx="30" cy="15" r="8" fill="#4CAF50"/>
+      <circle cx="19" cy="15" r="7.5" fill="#66BB6A"/>
+      <circle cx="9"  cy="15" r="6.5" fill="#4CAF50"/>
+      <circle cx="40" cy="10" r="2.8" fill="#2E7D32"/>
+      <circle cx="44" cy="10" r="2.8" fill="#2E7D32"/>
+      <circle cx="40.5" cy="10.5" r="1.2" fill="#fff"/>
+      <circle cx="44.5" cy="10.5" r="1.2" fill="#fff"/>
+      <path d="M42 5 Q39 1 35 0" stroke="#388E3C" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M42 5 Q45 1 49 0" stroke="#388E3C" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="35" cy="0" r="2" fill="#388E3C"/>
+      <circle cx="49" cy="0" r="2" fill="#388E3C"/>
+    </svg>`;
+  } else {
+    return `<svg viewBox="0 0 50 42" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="25" cy="27" rx="10" ry="9" fill="#6D4C41"/>
+      <ellipse cx="25" cy="16" rx="8" ry="7" fill="#8D6E63"/>
+      <circle cx="21" cy="14" r="2.2" fill="#fff"/>
+      <circle cx="29" cy="14" r="2.2" fill="#fff"/>
+      <circle cx="21.5" cy="14.5" r="1.1" fill="#111"/>
+      <circle cx="29.5" cy="14.5" r="1.1" fill="#111"/>
+      <line x1="15" y1="24" x2="3"  y2="16" stroke="#5D4037" stroke-width="2"/>
+      <line x1="15" y1="28" x2="1"  y2="28" stroke="#5D4037" stroke-width="2"/>
+      <line x1="15" y1="32" x2="3"  y2="40" stroke="#5D4037" stroke-width="2"/>
+      <line x1="35" y1="24" x2="47" y2="16" stroke="#5D4037" stroke-width="2"/>
+      <line x1="35" y1="28" x2="49" y2="28" stroke="#5D4037" stroke-width="2"/>
+      <line x1="35" y1="32" x2="47" y2="40" stroke="#5D4037" stroke-width="2"/>
+    </svg>`;
+  }
+}
+
+// ============================================================
+//  WATER SVG
+// ============================================================
+function makeWaterSVG() {
+  return `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 5 Q11 22 11 34 a13 13 0 0 0 26 0 Q37 22 24 5Z" fill="#29B6F6" opacity="0.92"/>
+    <path d="M24 10 Q17 23 17 32 a7 7 0 0 0 11 0 Q29 22 24 10Z" fill="rgba(255,255,255,0.42)"/>
+    <ellipse cx="18" cy="29" rx="3" ry="5" fill="rgba(255,255,255,0.32)" transform="rotate(-20 18 29)"/>
+  </svg>`;
+}
+
+// ============================================================
+//  SPAWN WEED
 // ============================================================
 function spawnWeed() {
   if (!active) return;
@@ -674,7 +718,7 @@ function spawnWeed() {
   const cx = fw / 2;
   const halfW = W_SIZE_W / 2 + 8;
 
-  let x, tries=0;
+  let x, tries = 0;
   do {
     x = halfW + Math.random()*(fw - halfW*2);
     tries++;
@@ -690,10 +734,6 @@ function spawnWeed() {
   el.style.width = W_SIZE_W+'px'; el.style.height = W_SIZE_H+'px';
   el.innerHTML = makeWeedSVG();
 
-  // lifetime
-  const lifetime = slowed ? 3600 : 2600;
-
-  // Grow-in
   el.style.transform = 'translate(-50%,-50%) scale(0)';
   field.appendChild(el);
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -704,23 +744,176 @@ function spawnWeed() {
   const obj = { el, x, y };
   weeds.push(obj);
 
-  const onHit = (ex,ey) => pullWeed(obj,ex,ey);
-  el.addEventListener('click', e => { e.stopPropagation(); onHit(e.clientX,e.clientY); });
+  const onHit = (ex, ey) => pullWeed(obj, ex, ey);
+  el.addEventListener('click', e => { e.stopPropagation(); onHit(e.clientX, e.clientY); });
   el.addEventListener('touchend', e => {
     e.preventDefault(); e.stopPropagation();
     onHit(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  }, {passive:false});
+  }, { passive: false });
 
-  const t = setTimeout(() => { if (el.parentNode) missWeed(obj); }, lifetime);
+  const t = setTimeout(() => { if (el.parentNode) missWeed(obj); }, 2600);
   wTimers.push(t);
   scheduleNext();
 }
 
 function scheduleNext() {
   if (!active) return;
-  const [mn,mx] = slowed ? [1100,2100] : [500,1150];
-  const t = setTimeout(spawnWeed, mn + Math.random()*(mx-mn));
+  const t = setTimeout(spawnWeed, 500 + Math.random()*650);
   wTimers.push(t);
+}
+
+// ============================================================
+//  SPAWN BUG
+// ============================================================
+function spawnBug() {
+  if (!active) return;
+  if (bugs.length >= MAX_BUGS) { scheduleBug(); return; }
+
+  const field = document.getElementById('field');
+  const fw = field.offsetWidth, fh = field.offsetHeight;
+  const groundY = fh * GROUND_PCT;
+
+  const x = 80 + Math.random() * (fw - 160);
+  const y = groundY - 20 - Math.random() * (fh * 0.35);
+
+  const el = document.createElement('div');
+  el.className = 'bug';
+  el.style.left = x+'px'; el.style.top = y+'px';
+  el.innerHTML = makeBugSVG();
+
+  el.style.transform = 'translate(-50%,-50%) scale(0)';
+  field.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.transition = 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1)';
+    el.style.transform  = 'translate(-50%,-50%) scale(1)';
+  }));
+
+  const obj = { el, x, y, vx: (Math.random()-0.5)*BUG_VX_RANGE, vy: (Math.random()-0.5)*BUG_VY_RANGE };
+  bugs.push(obj);
+
+  const moveInt = setInterval(() => {
+    if (!active || !el.parentNode) { clearInterval(moveInt); return; }
+    obj.x += obj.vx * 0.016;
+    obj.y += obj.vy * 0.016;
+    const bLeft = 20, bRight = fw - 20;
+    const bTop  = groundY - fh * 0.42, bBottom = groundY - 8;
+    if (obj.x < bLeft)   { obj.x = bLeft;   obj.vx =  Math.abs(obj.vx); }
+    if (obj.x > bRight)  { obj.x = bRight;  obj.vx = -Math.abs(obj.vx); }
+    if (obj.y < bTop)    { obj.y = bTop;    obj.vy =  Math.abs(obj.vy); }
+    if (obj.y > bBottom) { obj.y = bBottom; obj.vy = -Math.abs(obj.vy); }
+    if (Math.random() < BUG_DIR_CHANGE_PROB) {
+      obj.vx = (Math.random()-0.5)*BUG_VX_RANGE;
+      obj.vy = (Math.random()-0.5)*BUG_VY_RANGE;
+    }
+    el.style.left = obj.x+'px'; el.style.top = obj.y+'px';
+    el.style.transform = `translate(-50%,-50%) scaleX(${obj.vx < 0 ? -1 : 1})`;
+  }, 16);
+  bugIntervals.push(moveInt);
+
+  const onBugHit = (cx, cy) => bugHit(obj, cx, cy, moveInt);
+  el.addEventListener('click', e => { e.stopPropagation(); onBugHit(e.clientX, e.clientY); });
+  el.addEventListener('touchend', e => {
+    e.preventDefault(); e.stopPropagation();
+    onBugHit(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, { passive: false });
+
+  const lt = setTimeout(() => {
+    clearInterval(moveInt);
+    if (el.parentNode) {
+      el.style.transition = 'opacity 0.4s';
+      el.style.opacity = '0';
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 420);
+    }
+    bugs = bugs.filter(b => b !== obj);
+    scheduleBug();
+  }, BUG_LIFETIME);
+  bugTimers.push(lt);
+}
+
+function scheduleBug() {
+  if (!active) return;
+  const t = setTimeout(spawnBug, 3000 + Math.random()*4000);
+  bugTimers.push(t);
+}
+
+// ============================================================
+//  SPAWN WATER ITEM
+// ============================================================
+function spawnWater() {
+  if (!active) return;
+
+  const field = document.getElementById('field');
+  const fw = field.offsetWidth, fh = field.offsetHeight;
+  const groundY = fh * GROUND_PCT;
+
+  const startY = 40 + Math.random() * (groundY * 0.75);
+  const speed  = WATER_SPEED_MIN + Math.random() * WATER_SPEED_RNG;
+  const amp1   = WATER_AMP1_MIN  + Math.random() * WATER_AMP1_RNG;
+  const freq1  = WATER_FREQ1_MIN + Math.random() * WATER_FREQ1_RNG;
+  const amp2   = WATER_AMP2_MIN  + Math.random() * WATER_AMP2_RNG;
+  const freq2  = WATER_FREQ2_MIN + Math.random() * WATER_FREQ2_RNG;
+  const phase  = Math.random() * Math.PI * 2;
+
+  const el = document.createElement('div');
+  el.className = 'water-item';
+  el.innerHTML = makeWaterSVG();
+  el.style.left = '-50px';
+  el.style.top  = startY + 'px';
+  field.appendChild(el);
+  waterItems.push(el);
+
+  let posX = -50, t = 0, collected = false;
+
+  const interval = setInterval(() => {
+    if (!active || !el.parentNode) { clearInterval(interval); return; }
+    t += 0.016;
+    posX += speed * 0.016;
+    const dy = amp1 * Math.sin(freq1 * t + phase) + amp2 * Math.sin(freq2 * t * 1.8 + 1.2);
+    el.style.left = posX + 'px';
+    el.style.top  = (startY + dy) + 'px';
+    if (posX > fw + 60) {
+      clearInterval(interval);
+      if (el.parentNode) el.remove();
+      waterItems = waterItems.filter(w => w !== el);
+      scheduleWater();
+    }
+  }, 16);
+  waterIntervals.push(interval);
+
+  const onWaterHit = (cx, cy) => {
+    if (collected) return;
+    collected = true;
+    clearInterval(interval);
+    waterItems = waterItems.filter(w => w !== el);
+    el.classList.add('collected');
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 340);
+    waterBoost(cx, cy);
+    scheduleWater();
+  };
+  el.addEventListener('click', e => { e.stopPropagation(); onWaterHit(e.clientX, e.clientY); });
+  el.addEventListener('touchend', e => {
+    e.preventDefault(); e.stopPropagation();
+    onWaterHit(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, { passive: false });
+}
+
+function scheduleWater() {
+  if (!active) return;
+  waterSpawnTimer = setTimeout(spawnWater, 7000 + Math.random()*8000);
+}
+
+function waterBoost(cx, cy) {
+  const prev = score;
+  score = Math.min(CROP_TOTAL, score + WATER_BOOST);
+  if (score !== prev) {
+    document.getElementById('score-val').textContent = score;
+    const sv = document.getElementById('score-val');
+    sv.style.transform = 'scale(1.5)';
+    setTimeout(() => sv.style.transform = '', 130);
+  }
+  playWaterSound();
+  showGrowthPop('💧 ぐんぐん育つ！', false);
+  checkCropGrowth();
 }
 
 // ============================================================
@@ -731,6 +924,7 @@ function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
+
 function playPullSound() {
   try {
     const ctx = getAudioCtx();
@@ -742,55 +936,112 @@ function playPullSound() {
     for (let i = 0; i < bufLen; i++) {
       data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.4);
     }
-    const src = ctx.createBufferSource();
+    const src  = ctx.createBufferSource();
     src.buffer = buf;
     const filt = ctx.createBiquadFilter();
-    filt.type = 'bandpass';
-    filt.frequency.value = SFX_FREQ;
-    filt.Q.value = SFX_Q;
+    filt.type = 'bandpass'; filt.frequency.value = SFX_FREQ; filt.Q.value = SFX_Q;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(SFX_GAIN, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
     src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
     src.start(); src.stop(ctx.currentTime + dur);
-  } catch(e) { /* ignore audio errors */ }
+  } catch(e) {}
+}
+
+function playHarvestSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    // Whoosh noise
+    const bufLen = Math.ceil(ctx.sampleRate * 0.55);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 0.75);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 1000;
+    const g0 = ctx.createGain();
+    g0.gain.setValueAtTime(0.35, now);
+    g0.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    src.connect(hp); hp.connect(g0); g0.connect(ctx.destination);
+    src.start(now); src.stop(now + 0.55);
+    // Rising bell tones
+    [523, 659, 784, 1047, 1318].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gn  = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gn.gain.setValueAtTime(0, now + i*0.085);
+      gn.gain.linearRampToValueAtTime(0.28, now + i*0.085 + 0.04);
+      gn.gain.exponentialRampToValueAtTime(0.001, now + i*0.085 + 0.65);
+      osc.connect(gn); gn.connect(ctx.destination);
+      osc.start(now + i*0.085); osc.stop(now + i*0.085 + 0.68);
+    });
+  } catch(e) {}
+}
+
+function playWaterSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    [880, 1108, 1318, 1760].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gn  = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i*0.06);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + i*0.06 + 0.18);
+      gn.gain.setValueAtTime(0.22, now + i*0.06);
+      gn.gain.exponentialRampToValueAtTime(0.001, now + i*0.06 + 0.38);
+      osc.connect(gn); gn.connect(ctx.destination);
+      osc.start(now + i*0.06); osc.stop(now + i*0.06 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function playDamageSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gn  = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.22);
+    gn.gain.setValueAtTime(0.35, now);
+    gn.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+    osc.connect(gn); gn.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.26);
+  } catch(e) {}
 }
 
 // ============================================================
-//  PULL / MISS
+//  PULL / MISS WEED
 // ============================================================
 function pullWeed(obj, cx, cy) {
   if (!active || !obj.el.parentNode) return;
-
-  // Backache check — rapid clicking builds gauge
-  // lastPullTime is read first (0 on first click = no penalty), then updated
-  const now = Date.now();
-  checkBackache(now);
-  lastPullTime = now;
-
   score++;
   document.getElementById('score-val').textContent = score;
-  // bump animation via inline style trick
   const sv = document.getElementById('score-val');
   sv.style.transform = 'scale(1.5)';
   setTimeout(() => sv.style.transform = '', 130);
-
   obj.el.classList.add('pulled');
   weeds = weeds.filter(w => w !== obj);
   playPullSound();
-  spawnDirt(cx,cy);
-  showScorePop('+1 本！',cx,cy,false);
+  spawnDirt(cx, cy);
+  showScorePop('+1 本！', cx, cy, false);
   checkCropGrowth();
-
-  // Crop bounce every N weeds
   if (score % CROP_BOUNCE_EVERY === 0) {
     const wrap = document.getElementById('crop-wrap');
     wrap.classList.remove('bounce');
-    void wrap.offsetWidth; // force reflow to restart animation
+    void wrap.offsetWidth;
     wrap.classList.add('bounce');
     setTimeout(() => wrap.classList.remove('bounce'), 700);
   }
-
   setTimeout(() => { if (obj.el.parentNode) obj.el.remove(); }, 400);
 }
 
@@ -800,133 +1051,46 @@ function missWeed(obj) {
   updateHeartsUI();
   obj.el.classList.add('missed');
   weeds = weeds.filter(w => w !== obj);
-  if (hearts <= 0 && !slowed) triggerPain();
+  if (hearts <= 0) setTimeout(() => endGame(false), 120);
   setTimeout(() => { if (obj.el.parentNode) obj.el.remove(); }, 450);
 }
 
 // ============================================================
-//  HEARTS (stamina)
+//  BUG HIT (clicking bug = damage)
+// ============================================================
+function bugHit(obj, cx, cy, moveInt) {
+  if (!active || !obj.el.parentNode) return;
+  clearInterval(moveInt);
+  bugs = bugs.filter(b => b !== obj);
+  obj.el.classList.add('hit');
+  setTimeout(() => { if (obj.el.parentNode) obj.el.remove(); }, 240);
+  hearts = Math.max(0, hearts - 1);
+  updateHeartsUI();
+  playDamageSound();
+  showScorePop('🐛 いてっ！', cx, cy, true);
+  if (hearts <= 0) setTimeout(() => endGame(false), 220);
+}
+
+// ============================================================
+//  HEARTS UI
 // ============================================================
 function updateHeartsUI() {
   for (let i = 0; i < HEARTS_MAX; i++) {
     document.getElementById('h'+i).textContent = i < hearts ? '💚' : '🖤';
   }
-  const low = hearts <= 1;
-  document.getElementById('pain-warn').classList.toggle('show', low);
-  document.getElementById('pain-icon').textContent = low ? '😖' : '💚';
+  document.getElementById('pain-icon').textContent = hearts <= 1 ? '😖' : '💚';
 }
-
-function triggerPain() {
-  slowed = true;
-  hearts = HEARTS_RECOVERY;
-  updateHeartsUI();
-  document.getElementById('slow-overlay').classList.add('active');
-  if (recovID) clearTimeout(recovID);
-  recovID = setTimeout(() => {
-    if (!active) return;
-    slowed = false;
-    document.getElementById('slow-overlay').classList.remove('active');
-  }, SLOW_PENALTY_MS);
-}
-
-// ============================================================
-//  BACKACHE GAUGE
-// ============================================================
-function updateBackacheUI() {
-  const fill = document.getElementById('backache-fill');
-  fill.style.width = backPain + '%';
-  if (backPain >= 80) {
-    fill.style.background = 'linear-gradient(90deg,#E53935,#B71C1C)';
-  } else if (backPain >= 50) {
-    fill.style.background = 'linear-gradient(90deg,#FFB300,#E53935)';
-  } else {
-    fill.style.background = 'linear-gradient(90deg,#FFB300,#FF8F00)';
-  }
-}
-
-function startBackacheDrain() {
-  if (backacheDecTimer) clearInterval(backacheDecTimer);
-  backacheDecTimer = setInterval(() => {
-    if (!active || inRecovery) return;
-    if (backPain > 0) {
-      backPain = Math.max(0, backPain - BACKACHE_DEC_RATE);
-      updateBackacheUI();
-    }
-  }, 1000);
-}
-
-function checkBackache(now) {
-  if (inRecovery) return;
-  const elapsed = now - lastPullTime;
-  if (lastPullTime > 0 && elapsed < RAPID_CLICK_MS) {
-    backPain = Math.min(BACKACHE_MAX, backPain + BACKACHE_INC);
-    updateBackacheUI();
-    if (backPain >= BACKACHE_MAX) {
-      triggerRecovery();
-    } else if (backPain >= BACKACHE_WARN) {
-      showBackacheWarn();
-    }
-  }
-}
-
-function showBackacheWarn() {
-  const m = document.getElementById('backache-msg');
-  m.classList.remove('show');
-  void m.offsetWidth;
-  m.classList.add('show');
-  setTimeout(() => m.classList.remove('show'), 1100);
-}
-
-function triggerRecovery() {
-  inRecovery = true;
-  active = false;
-  const popup = document.getElementById('recovery-popup');
-  popup.classList.add('show');
-
-  const fill = document.getElementById('recovery-progress-fill');
-  fill.style.width = '0%';
-  const totalMs = RECOVERY_SEC * 1000;
-  let elapsed = 0;
-  const interval = setInterval(() => {
-    elapsed += 100;
-    fill.style.width = Math.min(100, elapsed / totalMs * 100) + '%';
-    if (elapsed >= totalMs) {
-      clearInterval(interval);
-      endRecovery();
-    }
-  }, 100);
-}
-
-function endRecovery() {
-  inRecovery = false;
-  backPain = 0;
-  updateBackacheUI();
-  document.getElementById('recovery-popup').classList.remove('show');
-  active = true;
-  // Resume weed spawning
-  setTimeout(spawnWeed, 200);
-}
-
-// air swing — visual only, no heart penalty in side view
-document.getElementById('field').addEventListener('click', e => {
-  if (!active) return;
-  if (e.target.id === 'field' || e.target.tagName === 'svg' && e.target.closest('#crop-wrap')) return;
-  if (!e.target.closest('.weed')) {
-    showScorePop('空振り！', e.clientX, e.clientY, true);
-  }
-});
 
 // ============================================================
 //  FX
 // ============================================================
-function spawnDirt(x,y) {
+function spawnDirt(x, y) {
   const cs = ['#8B5E3C','#A07040','#7B4F30','#C49A6C','#6B4226'];
-  for (let i=0;i<8;i++) {
+  for (let i = 0; i < 8; i++) {
     const d = document.createElement('div');
     d.className = 'dirt';
-    // bias upward and sideways for side-view weed pull
     const a = (Math.random()-0.5)*Math.PI*1.4 - Math.PI/2;
-    const dist = 25+Math.random()*48;
+    const dist = 25 + Math.random()*48;
     d.style.cssText = `--dx:${(Math.cos(a)*dist).toFixed(1)}px;--dy:${(Math.sin(a)*dist).toFixed(1)}px;
       left:${x}px;top:${y}px;background:${cs[Math.floor(Math.random()*cs.length)]};
       width:${(5+Math.random()*7).toFixed(1)}px;height:${(5+Math.random()*7).toFixed(1)}px`;
@@ -935,121 +1099,129 @@ function spawnDirt(x,y) {
   }
 }
 
-function showScorePop(txt,x,y,miss) {
-  const p=document.createElement('div');
-  p.className='score-pop'+(miss?' miss':'');
-  p.textContent=txt; p.style.left=(x-28)+'px'; p.style.top=(y-28)+'px';
+function showScorePop(txt, x, y, miss) {
+  const p = document.createElement('div');
+  p.className = 'score-pop'+(miss?' miss':'');
+  p.textContent = txt;
+  p.style.left = (x-28)+'px'; p.style.top = (y-28)+'px';
   document.body.appendChild(p);
-  setTimeout(()=>p.remove(),750);
+  setTimeout(() => p.remove(), 750);
 }
 
 function showGrowthPop(txt, big) {
   const f = document.getElementById('field');
-  const p=document.createElement('div');
-  p.className='growth-pop';
-  if (big) p.style.fontSize='2rem';
-  p.textContent=txt;
-  p.style.left=(f.offsetWidth/2-70)+'px';
-  p.style.top =(f.offsetHeight/2-90)+'px';
+  const p = document.createElement('div');
+  p.className = 'growth-pop';
+  if (big) p.style.fontSize = '2rem';
+  p.textContent = txt;
+  p.style.left = (f.offsetWidth/2 - 80)+'px';
+  p.style.top  = (f.offsetHeight/2 - 90)+'px';
   document.body.appendChild(p);
-  setTimeout(()=>p.remove(),1200);
+  setTimeout(() => p.remove(), 1200);
 }
 
 function spawnConfetti() {
-  const cols=['#5DBB63','#E8C53A','#D94F3D','#4A9EDA','#FF7043','#AB47BC','#FFD600'];
-  for (let i=0;i<90;i++) {
-    setTimeout(()=>{
-      const c=document.createElement('div');
-      c.className='confetti-piece';
-      c.style.left=Math.random()*100+'vw'; c.style.top='-20px';
-      c.style.background=cols[Math.floor(Math.random()*cols.length)];
-      c.style.width=c.style.height=(6+Math.random()*9)+'px';
-      c.style.animationDuration=(1.4+Math.random()*2)+'s';
+  const cols = ['#5DBB63','#E8C53A','#D94F3D','#4A9EDA','#FF7043','#AB47BC','#FFD600'];
+  for (let i = 0; i < 90; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random()*100+'vw'; c.style.top = '-20px';
+      c.style.background = cols[Math.floor(Math.random()*cols.length)];
+      c.style.width = c.style.height = (6+Math.random()*9)+'px';
+      c.style.animationDuration = (1.4+Math.random()*2)+'s';
       document.body.appendChild(c);
-      setTimeout(()=>c.remove(),3800);
-    },i*32);
+      setTimeout(() => c.remove(), 3800);
+    }, i*32);
   }
 }
 
-// ============================================================
-//  TIMER
-// ============================================================
-function startTimer() {
-  timerID = setInterval(()=>{
-    if (inRecovery) return; // pause countdown during recovery
-    timeLeft--;
-    const tv=document.getElementById('timer-val');
-    tv.textContent=timeLeft;
-    tv.classList.toggle('urgent',timeLeft<=10);
-    if (timeLeft<=0) endGame();
-  },1000);
-}
+// Air swing
+document.getElementById('field').addEventListener('click', e => {
+  if (!active) return;
+  if (e.target.id === 'field') {
+    showScorePop('空振り！', e.clientX, e.clientY, true);
+  }
+});
 
 // ============================================================
 //  START
 // ============================================================
 function startGame() {
-  document.getElementById('start-screen').style.display='none';
+  document.getElementById('start-screen').style.display = 'none';
   document.getElementById('result-screen').classList.remove('show');
 
-  score=0; timeLeft=GAME_SEC; hearts=HEARTS_MAX; slowed=false; active=true; cropStage=0; harvested=false; weeds=[];
-  backPain=0; inRecovery=false; lastPullTime=0;
+  score = 0; hearts = HEARTS_MAX; active = true; cropStage = 0; harvestReady = false; weeds = [];
 
-  wTimers.forEach(clearTimeout); wTimers=[];
-  if (timerID) clearInterval(timerID);
-  if (recovID) clearTimeout(recovID);
-  if (backacheDecTimer) clearInterval(backacheDecTimer); backacheDecTimer=null;
-  document.querySelectorAll('.weed,.confetti-piece').forEach(e=>e.remove());
+  wTimers.forEach(clearTimeout);       wTimers = [];
+  bugTimers.forEach(id => { clearTimeout(id); clearInterval(id); }); bugTimers = [];
+  bugIntervals.forEach(clearInterval); bugIntervals = [];
+  waterIntervals.forEach(clearInterval); waterIntervals = [];
+  if (waterSpawnTimer) { clearTimeout(waterSpawnTimer); waterSpawnTimer = null; }
+  document.querySelectorAll('.weed,.confetti-piece,.bug,.water-item').forEach(e => e.remove());
+  bugs = []; waterItems = [];
 
-  document.getElementById('score-val').textContent='0';
-  document.getElementById('timer-val').textContent='60';
-  document.getElementById('timer-val').classList.remove('urgent');
-  hearts=HEARTS_MAX;
+  document.getElementById('score-val').textContent = '0';
   updateHeartsUI();
-  updateBackacheUI();
-  document.getElementById('slow-overlay').classList.remove('active');
-  document.getElementById('recovery-popup').classList.remove('show');
-  document.getElementById('crop-bar-fill').style.width='0%';
+  document.getElementById('crop-bar-fill').style.width = '0%';
   document.getElementById('stage-badge').classList.remove('show');
-  for(let i=0;i<5;i++) document.getElementById('si'+i).classList.toggle('done',i===0);
+  document.getElementById('harvest-hint').style.display = 'none';
+  for (let i = 0; i < 5; i++) document.getElementById('si'+i).classList.toggle('done', i === 0);
 
-  document.getElementById('crop-svg').innerHTML=cropSVG(0);
-  document.getElementById('hint').style.display='block';
-  setTimeout(()=>document.getElementById('hint').style.display='none',4000);
+  const wrap = document.getElementById('crop-wrap');
+  wrap.classList.remove('harvestable','harvest-pull','bounce');
+  document.getElementById('crop-svg').innerHTML = cropSVG(0);
+  document.getElementById('hint').style.display = 'block';
+  setTimeout(() => document.getElementById('hint').style.display = 'none', 4000);
 
-  startBackacheDrain();
-  startTimer();
-  setTimeout(spawnWeed,350);
-  setTimeout(spawnWeed,850);
-  setTimeout(spawnWeed,1400);
+  setTimeout(spawnWeed, 350);
+  setTimeout(spawnWeed, 900);
+  setTimeout(spawnWeed, 1500);
+  setTimeout(spawnBug, 5000 + Math.random()*3000);
+  setTimeout(spawnWater, 4000 + Math.random()*5000);
 }
 
 // ============================================================
 //  END
 // ============================================================
-function endGame() {
-  active=false; inRecovery=false;
-  clearInterval(timerID);
-  if(recovID) clearTimeout(recovID);
-  if(backacheDecTimer) clearInterval(backacheDecTimer); backacheDecTimer=null;
-  wTimers.forEach(clearTimeout); wTimers=[];
-  document.getElementById('hint').style.display='none';
-  document.getElementById('slow-overlay').classList.remove('active');
-  document.getElementById('recovery-popup').classList.remove('show');
+function endGame(win) {
+  active = false;
 
-  document.getElementById('result-score').innerHTML=score+' <span>本！</span>';
+  wTimers.forEach(clearTimeout);       wTimers = [];
+  bugTimers.forEach(id => { clearTimeout(id); clearInterval(id); }); bugTimers = [];
+  bugIntervals.forEach(clearInterval); bugIntervals = [];
+  waterIntervals.forEach(clearInterval); waterIntervals = [];
+  if (waterSpawnTimer) { clearTimeout(waterSpawnTimer); waterSpawnTimer = null; }
+  document.getElementById('hint').style.display = 'none';
+  document.getElementById('harvest-hint').style.display = 'none';
 
-  let grade,comment;
-  if      (score>=45) { grade='🌟🌟🌟'; comment='完璧！収穫まで達成！草むしり名人だ！！'; }
-  else if (score>=32) { grade='🌟🌟';   comment='すばらしい！作物もよく育ったね！'; }
-  else if (score>=18) { grade='🌟';     comment='いい感じ！練習すれば収穫できるよ！'; }
-  else if (score>=8)  { grade='🌱';     comment='もう少し！草にまけないで！'; }
-  else                { grade='🥕';     comment='つぎはがんばろう！草むしりはたいへんだ…！'; }
+  if (!win) {
+    document.getElementById('gameover-flash').classList.add('flash');
+    setTimeout(() => document.getElementById('gameover-flash').classList.remove('flash'), 800);
+  }
 
-  document.getElementById('grade-badge').textContent=grade;
-  document.getElementById('result-comment').textContent=comment;
-  if(score>=18) spawnConfetti();
-  setTimeout(()=>document.getElementById('result-screen').classList.add('show'),500);
+  const titleEl = document.getElementById('result-title');
+  document.getElementById('result-score').innerHTML = score + ' <span>本！</span>';
+
+  if (win) {
+    titleEl.textContent = '🥕 収穫成功！';
+    titleEl.classList.remove('lose');
+    document.getElementById('grade-badge').textContent = '🎉🌟🎉';
+    document.getElementById('result-comment').textContent = '完璧！ニンジンを収穫できたよ！おめでとう！！';
+    spawnConfetti();
+  } else {
+    titleEl.textContent = '💀 ゲームオーバー';
+    titleEl.classList.add('lose');
+    let grade, comment;
+    if      (score >= 32) { grade = '🌿'; comment = 'もう少しで収穫できたのに…！また挑戦してね！'; }
+    else if (score >= 18) { grade = '🌱'; comment = '虫にやられた！気をつけながら草をぬこう！'; }
+    else if (score >= 8)  { grade = '🌾'; comment = 'もっとがんばろう！虫に注意してね！'; }
+    else                  { grade = '💧'; comment = '虫に気をつけながら草をぬくのが大事だよ！'; }
+    document.getElementById('grade-badge').textContent = grade;
+    document.getElementById('result-comment').textContent = comment;
+  }
+
+  setTimeout(() => document.getElementById('result-screen').classList.add('show'), win ? 1500 : 600);
 }
 </script>
 </body>
