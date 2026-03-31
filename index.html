@@ -159,7 +159,7 @@ body {
 /* ===== WATER ITEM ===== */
 .water-item {
   position: absolute;
-  width: 48px; height: 56px;
+  width: 64px; height: 74px;
   transform: translate(-50%,-50%);
   cursor: pointer; z-index: 13;
   filter: drop-shadow(0 2px 8px rgba(41,182,246,0.65));
@@ -331,7 +331,7 @@ body {
   100%{transform:translateY(100vh) rotate(720deg);opacity:0.3}
 }
 #hint {
-  position:fixed; bottom:58px; left:50%; transform:translateX(-50%);
+  position:fixed; bottom:110px; left:50%; transform:translateX(-50%);
   font-size:0.95rem; color:rgba(255,255,255,0.92);
   text-shadow:0 1px 4px rgba(0,0,0,0.45); pointer-events:none; z-index:45;
   animation:hintBounce 0.9s ease infinite alternate; white-space:nowrap;
@@ -838,11 +838,17 @@ function spawnBug() {
     scheduleBug();
   }, BUG_LIFETIME);
   bugTimers.push(lt);
+
+  // ~30% chance to spawn a second bug shortly after this one appears
+  if (Math.random() < 0.30) {
+    const t2 = setTimeout(spawnBug, 800 + Math.random()*1200);
+    bugTimers.push(t2);
+  }
 }
 
 function scheduleBug() {
   if (!active) return;
-  const t = setTimeout(spawnBug, 3000 + Math.random()*4000);
+  const t = setTimeout(spawnBug, 1500 + Math.random()*2500);
   bugTimers.push(t);
 }
 
@@ -1184,7 +1190,7 @@ function startGame() {
   setTimeout(spawnWeed, 350);
   setTimeout(spawnWeed, 900);
   setTimeout(spawnWeed, 1500);
-  setTimeout(spawnBug, 3000 + Math.random()*2000);
+  setTimeout(spawnBug, 2000 + Math.random()*1500);
   setTimeout(spawnWater, 4000 + Math.random()*5000);
 }
 
